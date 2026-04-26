@@ -74,7 +74,7 @@ def chord_to_pitches(chord_str: str, octave: int = 4) -> list[int]:
       - Am7   (root_idx=9,  octave=4) → A4=69,   pitches [69, 72, 76, 79]
       - Cdim7 (root_idx=0,  octave=4) → C4=60,   pitches [60, 63, 66, 69]
 
-    При `octave=4` (default) все pitches попадают в диапазон [60, 79],
+    При `octave=4` (default) все pitches попадают в диапазон [60, 82],
     что комфортно лежит в [40, 84] (~ E2..C6) — рабочем регистре пианино.
     Для transposition в другой регистр передавай `octave` явно.
     """
