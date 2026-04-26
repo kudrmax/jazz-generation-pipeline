@@ -63,3 +63,9 @@ vendor/polyffusion-fork/exp/
 vendor/polyffusion-fork/pretrained
 finetune/datasphere/exp/
 finetune/kaggle/datasets/
+
+# Pipeline (T0 bootstrap)
+pipeline/.venv/
+pipeline/output/
+pipeline/**/__pycache__/
+pipeline/.pytest_cache/
