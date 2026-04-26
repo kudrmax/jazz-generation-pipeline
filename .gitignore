@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.ipynb_checkpoints/
+
+# Виртуальные окружения
+**/.venv/
+.venv/
+
+# Mac
+.DS_Store
+
+# Склонированные репозитории моделей (имеют свои .git, тяжёлые)
+# Восстановить: см. memory `reference_model_repos.md` (git clone каждой)
+models/
+
+# Артефакты обучения и preprocessing
+finetune/wjazzd_data/cmt_midi/
+finetune/wjazzd_data/pkl_files/
+finetune/wjazzd_data/ec2vae/*.npz
+finetune/outputs/
+
+# Pretrained веса и результаты обучения (тяжёлые)
+**/pretrained/
+**/result/
+**/checkpoint*/
+**/saved_models/
+*.pt
+*.pth
+*.ckpt
+*.pth.tar
+*.bin
+*.safetensors
+
+# Архивы
+*.tar.gz
+*.zip
+*.tar
+
+# Сгенерированные MIDI/MP3 (кроме демо в _listen)
+pipeline/output/bebopnet/
+pipeline/output/mingus/
+pipeline/output/jt/
+pipeline/output/ec2vae/
+pipeline/output/cmt/
+pipeline/output/polyffusion/
+pipeline/output/genchel/
+
+# Temp
+*.tmp
+*.swp
+*.bak
+
+# ImprovNet (отброшен — не chord-conditioned)
+improvnet/
+
+# Local Claude state (не часть проекта)
+.claude/
+finetune/wjazzd_data/polyffusion/
+vendor/polyffusion-fork/exp/
+vendor/polyffusion-fork/pretrained
+finetune/datasphere/exp/
+finetune/kaggle/datasets/
