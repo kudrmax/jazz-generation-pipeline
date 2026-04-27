@@ -22,6 +22,10 @@ CMT_RESULT_DIR:       Path = CMT_REPO_PATH / "result" / "smoke_wjazzd_5epochs"
 CMT_CHECKPOINT_PATH:  Path = CMT_RESULT_DIR / "smoke_5epochs.pth.tar"  # ← подмена весов: эта строка
 CMT_HPARAMS_PATH:     Path = CMT_RESULT_DIR / "hparams.yaml"           # ← гипер-параметры в паре с весами
 
+BEBOPNET_REPO_PATH:           Path = DIPLOMA_ROOT / "models" / "bebopnet-code"
+BEBOPNET_MODEL_DIR:           Path = BEBOPNET_REPO_PATH / "training_results" / "transformer" / "model"
+BEBOPNET_CHECKPOINT_FILENAME: str  = "model.pt"  # ← подмена весов
+
 MODEL_NAMES: list[str] = ["mingus", "bebopnet", "ec2vae", "cmt", "commu", "polyffusion"]
 
 MODEL_VENV_PYTHON: dict[str, Path] = {
@@ -36,6 +40,7 @@ MODEL_VENV_PYTHON: dict[str, Path] = {
 MODEL_RUNNER_SCRIPT: dict[str, Path] = {
     "mingus":      RUNNERS_ROOT / "mingus_runner.py",
     "cmt":         RUNNERS_ROOT / "cmt_runner.py",
+    "bebopnet":    RUNNERS_ROOT / "bebopnet_runner.py",
     # остальные runner-скрипты появляются вместе с реализацией модели
 }
 
@@ -47,8 +52,15 @@ ADAPTERS: dict[str, ModelAdapter] = {
         checkpoint_epochs=100,
     )),
     "bebopnet":    BebopNetAdapter(BebopNetPipelineConfig(
-        model_dir=DIPLOMA_ROOT / "models" / "bebopnet-code" / "training_results" / "transformer" / "model",
-        repo_path=DIPLOMA_ROOT / "models" / "bebopnet-code",
+        model_dir=BEBOPNET_MODEL_DIR,
+        repo_path=BEBOPNET_REPO_PATH,
+        checkpoint_filename=BEBOPNET_CHECKPOINT_FILENAME,
+        seed_strategy="tonic_whole",
+        temperature=1.0,
+        top_p=True,
+        beam_search="measure",
+        beam_width=2,
+        device="cpu",
     )),
     "ec2vae":      EC2VaeAdapter(),
     "cmt":         CMTAdapter(CMTPipelineConfig(
