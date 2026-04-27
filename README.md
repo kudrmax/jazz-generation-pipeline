@@ -27,13 +27,13 @@ pip install -r requirements.txt
 
 ```bash
 # из корня репо
-git submodule update --init --recursive       # подтянет models/MINGUS из нашего fork
+git submodule update --init --recursive    # подтянет models/MINGUS из нашего fork
 cd models/MINGUS
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install torch==2.11 numpy==2.4.4 music21==6.7.1 pretty_midi==0.2.11 note-seq
+pip install -r requirements-py312.txt      # пакеты под Python 3.12 + numpy 2.x
 export PYTHONPATH=$PWD
-python A_preprocessData/data_preprocessing.py --format xml   # ~3 минуты, генерирует DATA.json
+python A_preprocessData/data_preprocessing.py --format xml   # ~3 мин, генерирует DATA.json
 ```
 
 Pretrained чекпоинты `Epochs 100` уже идут вместе с submodule.
@@ -187,7 +187,7 @@ git submodule update --init --recursive       # склонирует MINGUS-fork
 cd models/MINGUS
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install torch==2.11 numpy==2.4.4 music21==6.7.1 pretty_midi==0.2.11 note-seq
+pip install -r requirements-py312.txt    # см. в форке: torch 2.11, numpy 2.4, music21 6.7, и т.д.
 
 export PYTHONPATH=$PWD
 python A_preprocessData/data_preprocessing.py --format xml   # ~3 минуты, генерирует DATA.json
