@@ -6,7 +6,6 @@ from pipeline.progression import ChordProgression
 from pipeline.adapters.base import ModelAdapter
 from pipeline.adapters.bebopnet import BebopNetAdapter
 from pipeline.adapters.ec2vae import EC2VaeAdapter
-from pipeline.adapters.cmt import CMTAdapter
 from pipeline.adapters.commu import ComMUAdapter
 from pipeline.adapters.polyffusion import PolyffusionAdapter
 
@@ -17,7 +16,7 @@ def test_model_adapter_is_abstract():
 
 
 @pytest.mark.parametrize("AdapterCls", [
-    BebopNetAdapter, EC2VaeAdapter, CMTAdapter, ComMUAdapter, PolyffusionAdapter,
+    BebopNetAdapter, EC2VaeAdapter, ComMUAdapter, PolyffusionAdapter,
 ])
 def test_stub_adapter_prepare_raises_not_implemented(tmp_path: Path, AdapterCls):
     adapter = AdapterCls()
@@ -27,7 +26,7 @@ def test_stub_adapter_prepare_raises_not_implemented(tmp_path: Path, AdapterCls)
 
 
 @pytest.mark.parametrize("AdapterCls", [
-    BebopNetAdapter, EC2VaeAdapter, CMTAdapter, ComMUAdapter, PolyffusionAdapter,
+    BebopNetAdapter, EC2VaeAdapter, ComMUAdapter, PolyffusionAdapter,
 ])
 def test_stub_adapter_extract_melody_raises_not_implemented(tmp_path: Path, AdapterCls):
     adapter = AdapterCls()
