@@ -87,12 +87,16 @@ def build_mingus_xml(
         part.append(m)
         # забираем beats из текущего аккорда
         cur_remaining -= bpb
-        if cur_remaining <= 0:
-            try:
-                cur_chord, cur_remaining = next(chord_iter)
-            except StopIteration:
-                cur_chord, cur_remaining = (cur_chord, 0)  # последний аккорд — больше итераций нет
+        if cur_remaining <= 0 and bar < progression.num_bars() - 1:
+            cur_chord, cur_remaining = next(chord_iter)
         measure_idx += 1
+
+    # Sanity check: chord iterator должен быть полностью исчерпан
+    remaining = list(chord_iter)
+    assert not remaining, (
+        f"chord iterator has {len(remaining)} unused chords after "
+        f"{progression.num_bars()} bars; total_beats validation should have caught this"
+    )
 
     score.insert(0, part)
     score.write("musicxml", fp=str(out_path))
