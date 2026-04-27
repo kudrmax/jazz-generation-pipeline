@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
 
 import pretty_midi
 
@@ -16,11 +15,14 @@ class ModelAdapter(ABC):
     def prepare(
         self,
         progression: ChordProgression,
-        config: Any,
         tmp_dir: Path,
     ) -> dict:
-        """Из progression и per-model config собирает params для runner'а
+        """Из progression собирает params для runner'а
         (включая физическую подготовку входных файлов в tmp_dir, если нужно).
+
+        Конфигурация модели хранится в state экземпляра adapter'а (из __init__),
+        а не передаётся в prepare. Это позволяет config быть immutable после
+        инициализации.
 
         Возвращает словарь, который pipeline пробрасывает runner'у через JSON stdin.
         """

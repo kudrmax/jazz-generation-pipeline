@@ -35,26 +35,17 @@ MODEL_RUNNER_SCRIPT: dict[str, Path] = {
 }
 
 ADAPTERS: dict[str, ModelAdapter] = {
-    "mingus":      MingusAdapter(MingusPipelineConfig()),
+    "mingus":      MingusAdapter(MingusPipelineConfig(
+        seed_strategy="tonic_whole",
+        temperature=1.0,
+        device="cpu",
+        checkpoint_epochs=100,
+    )),
     "bebopnet":    BebopNetAdapter(),
     "ec2vae":      EC2VaeAdapter(),
     "cmt":         CMTAdapter(),
     "commu":       ComMUAdapter(),
     "polyffusion": PolyffusionAdapter(),
-}
-
-MODEL_CONFIGS: dict[str, object | None] = {
-    "mingus": MingusPipelineConfig(
-        seed_strategy="tonic_whole",
-        temperature=1.0,
-        device="cpu",
-        checkpoint_epochs=100,
-    ),
-    "bebopnet":    None,
-    "ec2vae":      None,
-    "cmt":         None,
-    "commu":       None,
-    "polyffusion": None,
 }
 
 # Общее pipeline-решение: монофонная мелодия в melody_only.mid пишется единым

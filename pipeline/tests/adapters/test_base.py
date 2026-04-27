@@ -23,7 +23,7 @@ def test_stub_adapter_prepare_raises_not_implemented(tmp_path: Path, AdapterCls)
     adapter = AdapterCls()
     progression = ChordProgression(chords=[("Cmaj7", 4)], tempo=120.0, time_signature="4/4")
     with pytest.raises(NotImplementedError, match="adapter not implemented"):
-        adapter.prepare(progression, config=None, tmp_dir=tmp_path)
+        adapter.prepare(progression, tmp_path)
 
 
 @pytest.mark.parametrize("AdapterCls", [

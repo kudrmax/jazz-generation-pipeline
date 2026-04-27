@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from pipeline.config import (
-    ADAPTERS, MELODY_PROGRAM, MODEL_CONFIGS, MODEL_NAMES,
+    ADAPTERS, MELODY_PROGRAM, MODEL_NAMES,
     MODEL_RUNNER_SCRIPT, MODEL_VENV_PYTHON, OUTPUT_ROOT, RUNNER_TIMEOUT_SEC,
 )
 from pipeline.postprocess import postprocess
@@ -50,11 +50,10 @@ def generate_all(
     results: dict[str, dict] = {}
     for model in MODEL_NAMES:
         adapter = ADAPTERS[model]
-        cfg = MODEL_CONFIGS[model]
         model_tmp = tmp_root / model
         model_tmp.mkdir(exist_ok=True)
         try:
-            params = adapter.prepare(progression, cfg, model_tmp)
+            params = adapter.prepare(progression, model_tmp)
             raw_midi = _run_model_subprocess(model, params, run_id, model_tmp)
             melody = adapter.extract_melody(raw_midi)
             results[model] = postprocess(

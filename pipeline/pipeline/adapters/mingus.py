@@ -29,30 +29,31 @@ class MingusPipelineConfig:
 
 
 class MingusAdapter(ModelAdapter):
-    def __init__(self, config: MingusPipelineConfig | None = None) -> None:
-        self._config = config or MingusPipelineConfig()
+    def __init__(self, config: MingusPipelineConfig) -> None:
+        # config теперь обязателен — нет default fallback. Конфиг immutable
+        # после инициализации.
+        self._config = config
 
     def prepare(
         self,
         progression: ChordProgression,
-        config: MingusPipelineConfig,
         tmp_dir: Path,
     ) -> dict:
         from pipeline.config import MINGUS_REPO_PATH  # ленивый импорт чтобы избежать circular
         from pipeline._xml_builders.mingus_xml import build_mingus_xml  # circular: mingus_xml импортирует MingusPipelineConfig
 
-        self._config = config  # remember for extract_melody
+        cfg = self._config
         tmp_dir = Path(tmp_dir)
         tmp_dir.mkdir(parents=True, exist_ok=True)
         xml_path = tmp_dir / "input.xml"
         midi_path = tmp_dir / "raw.mid"
-        build_mingus_xml(progression, config, xml_path)
+        build_mingus_xml(progression, cfg, xml_path)
         return {
             "input_xml_path": str(xml_path),
             "output_midi_path": str(midi_path),
-            "checkpoint_epochs": config.checkpoint_epochs,
-            "temperature": config.temperature,
-            "device": config.device,
+            "checkpoint_epochs": cfg.checkpoint_epochs,
+            "temperature": cfg.temperature,
+            "device": cfg.device,
             "model_repo_path": str(MINGUS_REPO_PATH),
         }
 
