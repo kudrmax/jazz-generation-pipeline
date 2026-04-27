@@ -1,0 +1,17 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import pretty_midi
+
+from pipeline.adapters.base import ModelAdapter
+from pipeline.progression import ChordProgression
+
+
+class BebopNetAdapter(ModelAdapter):
+    def prepare(self, progression: ChordProgression, config: Any, tmp_dir: Path) -> dict:
+        raise NotImplementedError("model bebopnet: adapter not implemented")
+
+    def extract_melody(self, raw_midi_path: Path) -> pretty_midi.Instrument:
+        raise NotImplementedError("model bebopnet: adapter not implemented")
