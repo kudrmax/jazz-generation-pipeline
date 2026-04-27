@@ -4,7 +4,7 @@ import pretty_midi
 import pytest
 
 from pipeline.progression import ChordProgression
-from pipeline.chord_render import render_chord_track
+from pipeline.chord_render import build_chord_instrument, render_chord_track
 
 
 def _basic_progression() -> ChordProgression:
@@ -13,6 +13,47 @@ def _basic_progression() -> ChordProgression:
         tempo=120.0,
         time_signature="4/4",
     )
+
+
+def test_build_chord_instrument_returns_instrument():
+    inst = build_chord_instrument(_basic_progression())
+    assert isinstance(inst, pretty_midi.Instrument)
+
+
+def test_build_chord_instrument_program_zero():
+    inst = build_chord_instrument(_basic_progression())
+    assert inst.program == 0
+    assert inst.is_drum is False
+
+
+def test_build_chord_instrument_correct_note_count():
+    """4 chord × 4-voice voicing = 16 notes."""
+    inst = build_chord_instrument(_basic_progression())
+    assert len(inst.notes) == 16
+
+
+def test_build_chord_instrument_durations_match_progression():
+    p = ChordProgression(
+        chords=[("Cmaj7", 2), ("Am7", 6)],
+        tempo=120.0,
+        time_signature="4/4",
+    )
+    inst = build_chord_instrument(p)
+    cmaj_notes = [n for n in inst.notes if n.start == 0.0]
+    am_notes = [n for n in inst.notes if n.start > 0.0]
+    assert len(cmaj_notes) == 4
+    assert len(am_notes) == 4
+    assert all(abs(n.end - 1.0) < 1e-6 for n in cmaj_notes)
+    assert all(abs(n.start - 1.0) < 1e-6 for n in am_notes)
+    assert all(abs(n.end - 4.0) < 1e-6 for n in am_notes)
+
+
+def test_build_chord_instrument_does_not_write_file(tmp_path: Path):
+    """build_chord_instrument should NOT touch disk — only return Instrument."""
+    snapshot_before = set(tmp_path.iterdir())
+    build_chord_instrument(_basic_progression())
+    snapshot_after = set(tmp_path.iterdir())
+    assert snapshot_before == snapshot_after
 
 
 def test_render_chord_track_writes_file(tmp_path: Path):
