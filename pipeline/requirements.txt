@@ -2,4 +2,6 @@ pretty_midi==0.2.10
 music21==9.1.0
 numpy>=1.24,<3.0
 pytest>=8.0
+# pretty_midi 0.2.10 imports pkg_resources (removed in setuptools>=81).
+# Drop this pin when pretty_midi switches to importlib.resources.
 setuptools<81
