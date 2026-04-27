@@ -83,4 +83,9 @@ class BebopNetAdapter(ModelAdapter):
             raise ValueError("progression has no chords")
 
     def extract_melody(self, raw_midi_path: Path) -> pretty_midi.Instrument:
-        raise NotImplementedError("model bebopnet: extract_melody not implemented yet")
+        pm = pretty_midi.PrettyMIDI(str(raw_midi_path))
+        if not pm.instruments:
+            raise ValueError(
+                f"no instruments in {raw_midi_path}; cannot extract melody"
+            )
+        return pm.instruments[0]
