@@ -86,4 +86,11 @@ class CMTAdapter(ModelAdapter):
         }
 
     def extract_melody(self, raw_midi_path: Path) -> pretty_midi.Instrument:
-        raise NotImplementedError("model cmt: extract_melody not implemented yet")
+        pm = pretty_midi.PrettyMIDI(str(raw_midi_path))
+        for inst in pm.instruments:
+            if inst.name == "melody":
+                return inst
+        names = [i.name for i in pm.instruments]
+        raise ValueError(
+            f"melody track 'melody' not found in {raw_midi_path} (have: {names})"
+        )
