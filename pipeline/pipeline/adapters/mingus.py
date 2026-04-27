@@ -40,14 +40,20 @@ class MingusAdapter(ModelAdapter):
         tmp_dir: Path,
     ) -> dict:
         from pipeline.config import MINGUS_REPO_PATH  # ленивый импорт чтобы избежать circular
-        from pipeline._xml_builders.mingus_xml import build_mingus_xml  # circular: mingus_xml импортирует MingusPipelineConfig
+        from pipeline._xml_builders.jazz_xml import build_xml
 
         cfg = self._config
         tmp_dir = Path(tmp_dir)
         tmp_dir.mkdir(parents=True, exist_ok=True)
         xml_path = tmp_dir / "input.xml"
         midi_path = tmp_dir / "raw.mid"
-        build_mingus_xml(progression, cfg, xml_path)
+        build_xml(
+            progression,
+            seed_strategy=cfg.seed_strategy,
+            custom_xml_path=cfg.custom_xml_path,
+            out_path=xml_path,
+            melody_instrument_name=cfg.melody_instrument_name,
+        )
         return {
             "input_xml_path": str(xml_path),
             "output_midi_path": str(midi_path),
