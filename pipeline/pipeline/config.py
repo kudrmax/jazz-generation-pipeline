@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from pipeline.adapters.base import ModelAdapter
-from pipeline.adapters.bebopnet import BebopNetAdapter
+from pipeline.adapters.bebopnet import BebopNetAdapter, BebopNetPipelineConfig
 from pipeline.adapters.cmt import CMTAdapter, CMTPipelineConfig
 from pipeline.adapters.commu import ComMUAdapter
 from pipeline.adapters.ec2vae import EC2VaeAdapter
@@ -46,7 +46,10 @@ ADAPTERS: dict[str, ModelAdapter] = {
         device="cpu",
         checkpoint_epochs=100,
     )),
-    "bebopnet":    BebopNetAdapter(),
+    "bebopnet":    BebopNetAdapter(BebopNetPipelineConfig(
+        model_dir=DIPLOMA_ROOT / "models" / "bebopnet-code" / "training_results" / "transformer" / "model",
+        repo_path=DIPLOMA_ROOT / "models" / "bebopnet-code",
+    )),
     "ec2vae":      EC2VaeAdapter(),
     "cmt":         CMTAdapter(CMTPipelineConfig(
         checkpoint_path=CMT_CHECKPOINT_PATH,
