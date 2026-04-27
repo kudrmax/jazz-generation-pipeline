@@ -4,7 +4,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from pipeline.config import OUTPUT_ROOT
 from pipeline.pipeline import generate_all
 from pipeline.progression import ChordProgression
 

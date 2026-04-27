@@ -20,7 +20,6 @@ def test_cli_generate_prints_table(tmp_path: Path, capsys, monkeypatch, fake_mel
     _write_sample_progression(src)
 
     monkeypatch.setattr("pipeline.pipeline.OUTPUT_ROOT", tmp_path)
-    monkeypatch.setattr("pipeline.cli.OUTPUT_ROOT", tmp_path)  # на случай если CLI читает напрямую
 
     fake_raw_midi = tmp_path / "fake_raw.mid"
     pm = pretty_midi.PrettyMIDI(initial_tempo=120.0)
