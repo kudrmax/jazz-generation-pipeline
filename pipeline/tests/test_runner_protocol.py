@@ -93,3 +93,20 @@ def test_run_runner_passes_payload_via_stdin(tmp_path: Path):
         timeout_sec=10,
     )
     assert result == out_midi
+
+
+def test_run_runner_raises_runner_error_on_timeout(tmp_path: Path):
+    runner = tmp_path / "runner.py"
+    _write_runner(runner, (
+        'import sys, time\n'
+        'time.sleep(5)\n'
+        'sys.exit(0)\n'
+    ))
+    with pytest.raises(RunnerError, match="timed out"):
+        run_runner_subprocess(
+            venv_python=sys.executable,
+            runner_script=runner,
+            payload={"params": {"output_midi_path": str(tmp_path / "x.mid")}},
+            tmp_dir=tmp_path,
+            timeout_sec=1,
+        )

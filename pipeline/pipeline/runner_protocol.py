@@ -29,13 +29,22 @@ def run_runner_subprocess(
 
     expected_midi = Path(payload["params"]["output_midi_path"])
 
-    result = subprocess.run(
-        [str(venv_python), str(runner_script)],
-        input=json.dumps(payload),
-        capture_output=True,
-        text=True,
-        timeout=timeout_sec,
-    )
+    try:
+        result = subprocess.run(
+            [str(venv_python), str(runner_script)],
+            input=json.dumps(payload),
+            capture_output=True,
+            text=True,
+            timeout=timeout_sec,
+        )
+    except subprocess.TimeoutExpired as e:
+        stdout = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+        stderr = e.stderr.decode() if isinstance(e.stderr, bytes) else (e.stderr or "")
+        (tmp_dir / "stdout.log").write_text(stdout)
+        (tmp_dir / "stderr.log").write_text(stderr)
+        raise RunnerError(
+            f"runner {runner_script} timed out after {timeout_sec}s"
+        ) from e
     (tmp_dir / "stdout.log").write_text(result.stdout)
     (tmp_dir / "stderr.log").write_text(result.stderr)
 
