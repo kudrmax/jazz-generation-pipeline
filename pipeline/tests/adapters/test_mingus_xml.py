@@ -92,3 +92,10 @@ def test_custom_xml_requires_path(tmp_path: Path):
     cfg = MingusPipelineConfig(seed_strategy="custom_xml", checkpoint_epochs=100, custom_xml_path=None)
     with pytest.raises(ValueError, match="custom_xml_path"):
         build_mingus_xml(_basic_progression(), cfg, tmp_path / "input.xml")
+
+
+def test_empty_progression_raises(tmp_path: Path):
+    cfg = MingusPipelineConfig(seed_strategy="tonic_whole")
+    prog = ChordProgression(chords=[], tempo=120.0, time_signature="4/4")
+    with pytest.raises(ValueError, match="no chords"):
+        build_mingus_xml(prog, cfg, tmp_path / "input.xml")

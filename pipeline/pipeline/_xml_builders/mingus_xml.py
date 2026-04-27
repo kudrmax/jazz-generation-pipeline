@@ -56,6 +56,8 @@ def build_mingus_xml(
     part.insert(0, instrument.TenorSaxophone())
 
     measure_idx = 1
+    if not progression.chords:
+        raise ValueError("progression has no chords")
     chord_iter = iter(progression.chords)
     cur_chord, cur_remaining = next(chord_iter)
     for bar in range(progression.num_bars()):
