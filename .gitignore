@@ -13,10 +13,11 @@ __pycache__/
 .DS_Store
 
 # Склонированные репозитории моделей (имеют свои .git, тяжёлые).
-# MINGUS — exception: submodule на kudrmax/MINGUS, виден git-у.
+# Submodule-исключения — иначе models/* спрятал бы их.
 # Остальные восстанавливаются вручную (см. THESIS_PLAN.md).
 models/*
 !models/MINGUS
+!models/CMT-pytorch
 
 # Артефакты обучения и preprocessing
 finetune/wjazzd_data/cmt_midi/
