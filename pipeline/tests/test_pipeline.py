@@ -57,12 +57,13 @@ def test_generate_all_returns_dict_with_all_models(tmp_path: Path, fake_melody_i
 
     results = generate_all(_basic_progression(), run_id="20260427-000000-deadbeef")
     assert set(results.keys()) == {"mingus", "bebopnet", "ec2vae", "cmt", "commu", "polyffusion"}
-    assert "melody_only" in results["mingus"]
-    assert "with_chords" in results["mingus"]
+    for model in ["mingus", "bebopnet"]:
+        assert "melody_only" in results[model]
+        assert "with_chords" in results[model]
     # CMT после Task 8 — prepare уже работает, но 2-такта прогрессия не подходит
     # для модели с 8 bars × 16 fpb → adapter validation error. Стаб-модели
     # по-прежнему не реализованы.
-    for model in ["bebopnet", "ec2vae", "commu", "polyffusion"]:
+    for model in ["ec2vae", "commu", "polyffusion"]:
         assert "error" in results[model]
         assert "not implemented" in results[model]["error"]
     assert "error" in results["cmt"]
