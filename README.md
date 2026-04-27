@@ -23,12 +23,20 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**Шаг 2.** Подготовить MINGUS (один раз — см. подраздел «MINGUS» ниже):
+**Шаг 2.** Подготовить MINGUS (один раз — подробнее см. раздел «Models / MINGUS» ниже):
 
-- Склонировать MINGUS (`git clone https://github.com/EmanueleCosenza/MINGUS models/MINGUS`)
-- Поставить его venv с патчами под Python 3.12
-- Запустить preprocessing датасета (`DATA.json`, ~3 минуты)
-- Убедиться что есть pretrained чекпоинты `Epochs 100`
+```bash
+# из корня репо
+git submodule update --init --recursive       # подтянет models/MINGUS из нашего fork
+cd models/MINGUS
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install torch==2.11 numpy==2.4.4 music21==6.7.1 pretty_midi==0.2.11 note-seq
+export PYTHONPATH=$PWD
+python A_preprocessData/data_preprocessing.py --format xml   # ~3 минуты, генерирует DATA.json
+```
+
+Pretrained чекпоинты `Epochs 100` уже идут вместе с submodule.
 
 **Шаг 3.** Сгенерировать:
 
@@ -169,29 +177,23 @@ diploma/
 
 **Pre-requisites** (один раз для машины):
 
-```bash
-# 1. Склонировать MINGUS
-cd models
-git clone https://github.com/EmanueleCosenza/MINGUS
+`models/MINGUS` — git submodule на наш fork [kudrmax/MINGUS](https://github.com/kudrmax/MINGUS) с применёнными патчами под Python 3.12 и numpy 2.x. Upstream — [vincenzomadaghiele/MINGUS](https://github.com/vincenzomadaghiele/MINGUS).
 
-# 2. Поставить venv с патчами под Python 3.12
-cd MINGUS
+```bash
+# из корня нашего репо
+git submodule update --init --recursive       # склонирует MINGUS-fork в models/MINGUS
+                                              # вместе с pretrained чекпоинтами Epochs 100
+
+cd models/MINGUS
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install torch==2.11 numpy==2.4.4 music21==6.7.1 pretty_midi==0.2.11 note-seq
 
-# 3. Применить патчи (см. THESIS_PLAN.md или git history)
-#    - try/except в A_preprocessData/data_preprocessing.py
-#    - dtype=object в B_train/loadDB.py для ragged массивов
-
-# 4. Сделать preprocessing датасета (~3 минуты, создаёт DATA.json ~115 MB)
 export PYTHONPATH=$PWD
-python A_preprocessData/data_preprocessing.py --format xml
-
-# 5. Убедиться что pretrained чекпоинты на месте:
-#    B_train/models/pitchModel/MINGUS COND I-C-NC-B-BE-O Epochs 100.pt
-#    B_train/models/durationModel/MINGUS COND I-C-NC-B-BE-O Epochs 100.pt
+python A_preprocessData/data_preprocessing.py --format xml   # ~3 минуты, генерирует DATA.json
 ```
+
+После этого `pipeline.cli generate` будет вызывать MINGUS через subprocess в `models/MINGUS/.venv`.
 
 **Затравочная мелодия.** MINGUS требует не только аккорды, но и мелодию-затравку в XML — он её использует как prefix для авторегрессии. Качество выхода зависит от затравки. Стратегии в нашем `MingusPipelineConfig`:
 

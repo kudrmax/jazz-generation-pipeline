@@ -12,9 +12,11 @@ __pycache__/
 # Mac
 .DS_Store
 
-# Склонированные репозитории моделей (имеют свои .git, тяжёлые)
-# Восстановить: см. memory `reference_model_repos.md` (git clone каждой)
-models/
+# Склонированные репозитории моделей (имеют свои .git, тяжёлые).
+# MINGUS — exception: submodule на kudrmax/MINGUS, виден git-у.
+# Остальные восстанавливаются вручную (см. THESIS_PLAN.md).
+models/*
+!models/MINGUS
 
 # Артефакты обучения и preprocessing
 finetune/wjazzd_data/cmt_midi/

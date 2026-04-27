@@ -1,0 +1,4 @@
+[submodule "models/MINGUS"]
+	path = models/MINGUS
+	url = https://github.com/kudrmax/MINGUS.git
+	branch = master
