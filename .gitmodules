@@ -6,3 +6,7 @@
 	path = models/CMT-pytorch
 	url = https://github.com/kudrmax/CMT-pytorch.git
 	branch = master
+[submodule "models/bebopnet-code"]
+	path = models/bebopnet-code
+	url = https://github.com/kudrmax/bebopnet-code.git
+	branch = master

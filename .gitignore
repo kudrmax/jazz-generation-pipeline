@@ -18,6 +18,7 @@ __pycache__/
 models/*
 !models/MINGUS
 !models/CMT-pytorch
+!models/bebopnet-code
 
 # Артефакты обучения и preprocessing
 finetune/wjazzd_data/cmt_midi/
