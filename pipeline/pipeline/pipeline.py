@@ -69,4 +69,8 @@ def generate_all(
             results[model] = {"error": "not implemented (stub)"}
         except RunnerError as e:
             results[model] = {"error": str(e)}
+        except ValueError as e:
+            # Adapter-level валидация (несовместимый размер progression,
+            # неизвестный seed_strategy и т.п.) — не валим всю пачку.
+            results[model] = {"error": f"adapter validation: {e}"}
     return results
