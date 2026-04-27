@@ -37,8 +37,37 @@ class BebopNetAdapter(ModelAdapter):
         self._config = config
 
     def prepare(self, progression: ChordProgression, tmp_dir: Path) -> dict:
+        from pipeline._xml_builders.jazz_xml import build_xml
+
         self._validate(progression)
-        raise NotImplementedError("model bebopnet: prepare not fully implemented yet")
+        cfg = self._config
+        tmp_dir = Path(tmp_dir)
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+
+        xml_path = tmp_dir / "input.xml"
+        midi_path = tmp_dir / "raw.mid"
+
+        build_xml(
+            progression,
+            seed_strategy=cfg.seed_strategy,
+            custom_xml_path=cfg.custom_xml_path,
+            out_path=xml_path,
+            melody_instrument_name=cfg.melody_instrument_name,
+        )
+
+        return {
+            "input_xml_path":      str(xml_path),
+            "output_midi_path":    str(midi_path),
+            "model_dir":           str(cfg.model_dir),
+            "checkpoint_filename": cfg.checkpoint_filename,
+            "model_repo_path":     str(cfg.repo_path),
+            "num_measures":        progression.num_bars(),
+            "temperature":         cfg.temperature,
+            "top_p":               cfg.top_p,
+            "beam_search":         cfg.beam_search,
+            "beam_width":          cfg.beam_width,
+            "device":              cfg.device,
+        }
 
     def _validate(self, progression: ChordProgression) -> None:
         cfg = self._config
