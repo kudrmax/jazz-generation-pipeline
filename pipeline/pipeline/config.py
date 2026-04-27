@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pipeline.adapters.base import ModelAdapter
 from pipeline.adapters.bebopnet import BebopNetAdapter
-from pipeline.adapters.cmt import CMTAdapter
+from pipeline.adapters.cmt import CMTAdapter, CMTPipelineConfig
 from pipeline.adapters.commu import ComMUAdapter
 from pipeline.adapters.ec2vae import EC2VaeAdapter
 from pipeline.adapters.mingus import MingusAdapter, MingusPipelineConfig
@@ -17,6 +17,10 @@ OUTPUT_ROOT: Path = PIPELINE_ROOT / "output"
 RUNNERS_ROOT: Path = PIPELINE_ROOT / "runners"
 
 MINGUS_REPO_PATH: Path = DIPLOMA_ROOT / "models" / "MINGUS"
+CMT_REPO_PATH:        Path = DIPLOMA_ROOT / "models" / "CMT-pytorch"
+CMT_RESULT_DIR:       Path = CMT_REPO_PATH / "result" / "smoke_wjazzd_5epochs"
+CMT_CHECKPOINT_PATH:  Path = CMT_RESULT_DIR / "smoke_5epochs.pth.tar"  # ← подмена весов: эта строка
+CMT_HPARAMS_PATH:     Path = CMT_RESULT_DIR / "hparams.yaml"           # ← гипер-параметры в паре с весами
 
 MODEL_NAMES: list[str] = ["mingus", "bebopnet", "ec2vae", "cmt", "commu", "polyffusion"]
 
@@ -31,6 +35,7 @@ MODEL_VENV_PYTHON: dict[str, Path] = {
 
 MODEL_RUNNER_SCRIPT: dict[str, Path] = {
     "mingus":      RUNNERS_ROOT / "mingus_runner.py",
+    "cmt":         RUNNERS_ROOT / "cmt_runner.py",
     # остальные runner-скрипты появляются вместе с реализацией модели
 }
 
@@ -43,7 +48,15 @@ ADAPTERS: dict[str, ModelAdapter] = {
     )),
     "bebopnet":    BebopNetAdapter(),
     "ec2vae":      EC2VaeAdapter(),
-    "cmt":         CMTAdapter(),
+    "cmt":         CMTAdapter(CMTPipelineConfig(
+        checkpoint_path=CMT_CHECKPOINT_PATH,
+        hparams_path=CMT_HPARAMS_PATH,
+        repo_path=CMT_REPO_PATH,
+        seed_strategy="tonic_held",
+        prime_bars=1,
+        topk=5,
+        device="cpu",
+    )),
     "commu":       ComMUAdapter(),
     "polyffusion": PolyffusionAdapter(),
 }

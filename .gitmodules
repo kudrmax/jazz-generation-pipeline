@@ -2,3 +2,7 @@
 	path = models/MINGUS
 	url = https://github.com/kudrmax/MINGUS.git
 	branch = master
+[submodule "models/CMT-pytorch"]
+	path = models/CMT-pytorch
+	url = https://github.com/kudrmax/CMT-pytorch.git
+	branch = master
