@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pipeline.adapters.base import ModelAdapter
 from pipeline.adapters.bebopnet import BebopNetAdapter
-from pipeline.adapters.cmt import CMTAdapter
+from pipeline.adapters.cmt import CMTAdapter, CMTPipelineConfig
 from pipeline.adapters.commu import ComMUAdapter
 from pipeline.adapters.ec2vae import EC2VaeAdapter
 from pipeline.adapters.mingus import MingusAdapter, MingusPipelineConfig
@@ -17,6 +17,7 @@ OUTPUT_ROOT: Path = PIPELINE_ROOT / "output"
 RUNNERS_ROOT: Path = PIPELINE_ROOT / "runners"
 
 MINGUS_REPO_PATH: Path = DIPLOMA_ROOT / "models" / "MINGUS"
+CMT_REPO_PATH: Path = DIPLOMA_ROOT / "models" / "CMT-pytorch"
 
 MODEL_NAMES: list[str] = ["mingus", "bebopnet", "ec2vae", "cmt", "commu", "polyffusion"]
 
@@ -43,7 +44,11 @@ ADAPTERS: dict[str, ModelAdapter] = {
     )),
     "bebopnet":    BebopNetAdapter(),
     "ec2vae":      EC2VaeAdapter(),
-    "cmt":         CMTAdapter(),
+    "cmt":         CMTAdapter(CMTPipelineConfig(
+        checkpoint_path=CMT_REPO_PATH / "result" / "smoke_wjazzd_5epochs" / "model.pth.tar",
+        hparams_path=CMT_REPO_PATH / "hparams.yaml",
+        repo_path=CMT_REPO_PATH,
+    )),
     "commu":       ComMUAdapter(),
     "polyffusion": PolyffusionAdapter(),
 }
