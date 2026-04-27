@@ -75,3 +75,15 @@ def test_generate_all_creates_tmp_dir(tmp_path: Path, fake_melody_instrument, mo
     rid = "20260427-000000-cafebabe"
     generate_all(_basic_progression(), run_id=rid)
     assert (tmp_path / "_tmp" / rid).exists()
+
+
+def test_run_model_subprocess_raises_runner_error_when_runner_script_missing(tmp_path: Path, monkeypatch):
+    """Если в MODEL_RUNNER_SCRIPT нет ключа — должна быть понятная RunnerError, не KeyError."""
+    from pipeline.pipeline import _run_model_subprocess
+    from pipeline.runner_protocol import RunnerError
+
+    monkeypatch.setattr("pipeline.pipeline.MODEL_RUNNER_SCRIPT", {})
+    with pytest.raises(RunnerError, match="runner script not registered"):
+        _run_model_subprocess(
+            "bebopnet", {"output_midi_path": str(tmp_path / "x.mid")}, "rid", tmp_path,
+        )

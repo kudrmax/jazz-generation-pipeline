@@ -24,6 +24,11 @@ def make_run_id(progression: ChordProgression) -> str:
 def _run_model_subprocess(
     model: str, params: dict, run_id: str, model_tmp: Path,
 ) -> Path:
+    if model not in MODEL_RUNNER_SCRIPT:
+        raise RunnerError(
+            f"runner script not registered for model {model!r}; "
+            f"add MODEL_RUNNER_SCRIPT[{model!r}] in pipeline/config.py"
+        )
     payload = {"model": model, "run_id": run_id, "params": params}
     return run_runner_subprocess(
         venv_python=MODEL_VENV_PYTHON[model],
