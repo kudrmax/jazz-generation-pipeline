@@ -18,6 +18,10 @@ class ChordProgression:
     tempo: float = 120.0
     time_signature: str = "4/4"
 
+    def __post_init__(self) -> None:
+        if self.tempo <= 0:
+            raise ValueError(f"tempo must be > 0, got {self.tempo}")
+
     @classmethod
     def from_json(cls, path: Path) -> "ChordProgression":
         data = json.loads(Path(path).read_text())

@@ -60,3 +60,13 @@ def test_from_json_rejects_unknown_field(tmp_path: Path):
     }))
     with pytest.raises(ValueError, match="seed"):
         ChordProgression.from_json(src)
+
+
+def test_progression_rejects_zero_tempo():
+    with pytest.raises(ValueError, match="tempo"):
+        ChordProgression(chords=[("Cmaj7", 4)], tempo=0.0, time_signature="4/4")
+
+
+def test_progression_rejects_negative_tempo():
+    with pytest.raises(ValueError, match="tempo"):
+        ChordProgression(chords=[("Cmaj7", 4)], tempo=-120.0, time_signature="4/4")
