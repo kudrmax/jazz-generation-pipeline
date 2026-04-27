@@ -24,7 +24,7 @@ def _write_hparams(path: Path, frame_per_bar: int, num_bars: int, num_pitch: int
 def _cfg(
     tmp_path: Path, *,
     seed_strategy: str = "tonic_held",
-    custom_pkl_path: Path | None = None,
+    custom_seed_path: Path | None = None,
     prime_bars: int = 1,
     fpb: int = 16, num_bars: int = 8,
 ) -> CMTPipelineConfig:
@@ -35,7 +35,7 @@ def _cfg(
         hparams_path=hparams_path,
         repo_path=tmp_path / "repo",
         seed_strategy=seed_strategy,  # type: ignore[arg-type]
-        custom_pkl_path=custom_pkl_path,
+        custom_seed_path=custom_seed_path,
         prime_bars=prime_bars,
     )
 
@@ -50,9 +50,9 @@ def test_validation_unknown_seed_strategy(tmp_path: Path):
         CMTAdapter(cfg).prepare(_8bars_4_4(), tmp_path / "work")
 
 
-def test_validation_custom_pkl_without_path(tmp_path: Path):
-    cfg = _cfg(tmp_path, seed_strategy="custom_pkl", custom_pkl_path=None)
-    with pytest.raises(ValueError, match="custom_pkl_path"):
+def test_validation_custom_seed_without_path(tmp_path: Path):
+    cfg = _cfg(tmp_path, seed_strategy="custom_seed", custom_seed_path=None)
+    with pytest.raises(ValueError, match="custom_seed_path"):
         CMTAdapter(cfg).prepare(_8bars_4_4(), tmp_path / "work")
 
 

@@ -14,7 +14,6 @@ chord имеет shape [max_len + 1, 12]; все max_len + 1 фреймов не
 """
 from __future__ import annotations
 
-import pickle
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -95,13 +94,13 @@ def build_seed(
         return _seed_tonic_held(progression, prime_len)
     if config.seed_strategy == "tonic_quarters":
         return _seed_tonic_quarters(progression, frame_per_bar, prime_len)
-    if config.seed_strategy == "custom_pkl":
-        if config.custom_pkl_path is None:
-            raise ValueError("seed_strategy=custom_pkl requires custom_pkl_path")
-        return _seed_custom_pkl(config.custom_pkl_path, prime_len)
+    if config.seed_strategy == "custom_seed":
+        if config.custom_seed_path is None:
+            raise ValueError("seed_strategy=custom_seed requires custom_seed_path")
+        return _seed_custom_seed(config.custom_seed_path, prime_len)
     raise ValueError(
         f"unknown seed_strategy={config.seed_strategy!r}; "
-        f"expected 'tonic_held' | 'tonic_quarters' | 'custom_pkl'"
+        f"expected 'tonic_held' | 'tonic_quarters' | 'custom_seed'"
     )
 
 
@@ -136,14 +135,27 @@ def _seed_tonic_quarters(
     return pitch, rhythm
 
 
-def _seed_custom_pkl(pkl_path: Path, prime_len: int) -> tuple[np.ndarray, np.ndarray]:
-    with open(pkl_path, "rb") as f:
-        instance = pickle.load(f)
-    pitch_full = np.asarray(instance["pitch"], dtype=np.int64)
-    rhythm_full = np.asarray(instance["rhythm"], dtype=np.int64)
+def _seed_custom_seed(seed_path: Path, prime_len: int) -> tuple[np.ndarray, np.ndarray]:
+    """Загружает затравку из .npz файла с массивами `pitch` и `rhythm`.
+
+    Формат файла (создаётся через `np.savez(path, pitch=..., rhythm=...)`):
+        - pitch:  ndarray int64, shape ≥ (prime_len,). Значения по словарю
+                  CMT pitch-vocab: 0..47 — onset с MIDI=60+idx, 48 — rest,
+                  49 — sustain.
+        - rhythm: ndarray int64, shape ≥ (prime_len,). 0 — sustain frame,
+                  1 — note-off, 2 — onset.
+    """
+    with np.load(seed_path) as data:
+        if "pitch" not in data.files or "rhythm" not in data.files:
+            raise ValueError(
+                f"custom_seed file {seed_path} missing required keys; "
+                f"expected 'pitch' and 'rhythm', got {sorted(data.files)}"
+            )
+        pitch_full = np.asarray(data["pitch"], dtype=np.int64)
+        rhythm_full = np.asarray(data["rhythm"], dtype=np.int64)
     if pitch_full.shape[0] < prime_len or rhythm_full.shape[0] < prime_len:
         raise ValueError(
-            f"custom_pkl too short for prime_len={prime_len}: "
+            f"custom_seed too short for prime_len={prime_len}: "
             f"pitch.shape={pitch_full.shape}, rhythm.shape={rhythm_full.shape}"
         )
     return pitch_full[:prime_len], rhythm_full[:prime_len]

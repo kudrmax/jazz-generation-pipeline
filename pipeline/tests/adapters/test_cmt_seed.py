@@ -1,4 +1,3 @@
-import pickle
 from pathlib import Path
 
 import numpy as np
@@ -16,13 +15,13 @@ def _prog(first_chord: str = "Cmaj7", n_bars: int = 8) -> ChordProgression:
     return ChordProgression(chords=chords, tempo=120.0, time_signature="4/4")
 
 
-def _cfg(strategy: str, custom_pkl_path: Path | None = None, prime_bars: int = 1) -> CMTPipelineConfig:
+def _cfg(strategy: str, custom_seed_path: Path | None = None, prime_bars: int = 1) -> CMTPipelineConfig:
     return CMTPipelineConfig(
         checkpoint_path=Path("/dev/null"),
         hparams_path=Path("/dev/null"),
         repo_path=Path("/dev/null"),
         seed_strategy=strategy,  # type: ignore[arg-type]
-        custom_pkl_path=custom_pkl_path,
+        custom_seed_path=custom_seed_path,
         prime_bars=prime_bars,
     )
 
@@ -94,20 +93,15 @@ def test_seed_tonic_quarters_two_bars():
         assert pitch[f] == 0
 
 
-def test_seed_custom_pkl(tmp_path: Path):
-    pkl_path = tmp_path / "seed.pkl"
+def test_seed_custom_seed(tmp_path: Path):
+    """custom_seed загружает .npz с массивами pitch и rhythm."""
+    seed_path = tmp_path / "seed.npz"
     custom_pitch = np.arange(129, dtype=np.int64) % 50
     custom_rhythm = np.full(129, ONSET_RHYTHM_IDX, dtype=np.int64)
-    instance = {
-        "pitch": custom_pitch,
-        "rhythm": custom_rhythm,
-        "chord": np.zeros((129, 12), dtype=np.float32),
-    }
-    with open(pkl_path, "wb") as f:
-        pickle.dump(instance, f)
+    np.savez(seed_path, pitch=custom_pitch, rhythm=custom_rhythm)
 
     pitch, rhythm = build_seed(
-        _prog(), _cfg("custom_pkl", custom_pkl_path=pkl_path), frame_per_bar=16, prime_len=16,
+        _prog(), _cfg("custom_seed", custom_seed_path=seed_path), frame_per_bar=16, prime_len=16,
     )
     np.testing.assert_array_equal(pitch, custom_pitch[:16])
     np.testing.assert_array_equal(rhythm, custom_rhythm[:16])
@@ -118,21 +112,29 @@ def test_seed_unknown_strategy_raises():
         build_seed(_prog(), _cfg("nonsense"), frame_per_bar=16, prime_len=16)
 
 
-def test_seed_custom_pkl_without_path_raises():
-    with pytest.raises(ValueError, match="custom_pkl_path"):
-        build_seed(_prog(), _cfg("custom_pkl", custom_pkl_path=None), frame_per_bar=16, prime_len=16)
+def test_seed_custom_seed_without_path_raises():
+    with pytest.raises(ValueError, match="custom_seed_path"):
+        build_seed(_prog(), _cfg("custom_seed", custom_seed_path=None), frame_per_bar=16, prime_len=16)
 
 
-def test_seed_custom_pkl_too_short_raises(tmp_path: Path):
-    pkl_path = tmp_path / "seed.pkl"
-    instance = {
-        "pitch": np.zeros(8, dtype=np.int64),  # < prime_len=16
-        "rhythm": np.zeros(8, dtype=np.int64),
-        "chord": np.zeros((8, 12), dtype=np.float32),
-    }
-    with open(pkl_path, "wb") as f:
-        pickle.dump(instance, f)
+def test_seed_custom_seed_too_short_raises(tmp_path: Path):
+    seed_path = tmp_path / "seed.npz"
+    np.savez(
+        seed_path,
+        pitch=np.zeros(8, dtype=np.int64),    # < prime_len=16
+        rhythm=np.zeros(8, dtype=np.int64),
+    )
     with pytest.raises(ValueError, match="too short|prime_len"):
         build_seed(
-            _prog(), _cfg("custom_pkl", custom_pkl_path=pkl_path), frame_per_bar=16, prime_len=16,
+            _prog(), _cfg("custom_seed", custom_seed_path=seed_path), frame_per_bar=16, prime_len=16,
+        )
+
+
+def test_seed_custom_seed_missing_keys_raises(tmp_path: Path):
+    """Если в .npz нет ключей pitch/rhythm — понятная ошибка."""
+    seed_path = tmp_path / "seed.npz"
+    np.savez(seed_path, foo=np.zeros(16, dtype=np.int64))
+    with pytest.raises(ValueError, match="missing required keys"):
+        build_seed(
+            _prog(), _cfg("custom_seed", custom_seed_path=seed_path), frame_per_bar=16, prime_len=16,
         )

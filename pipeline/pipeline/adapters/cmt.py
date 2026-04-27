@@ -23,8 +23,8 @@ class CMTPipelineConfig:
     checkpoint_path: Path
     hparams_path: Path
     repo_path: Path
-    seed_strategy: Literal["tonic_held", "tonic_quarters", "custom_pkl"] = "tonic_held"
-    custom_pkl_path: Path | None = None
+    seed_strategy: Literal["tonic_held", "tonic_quarters", "custom_seed"] = "tonic_held"
+    custom_seed_path: Path | None = None
     prime_bars: int = 1
     topk: int = 5
     device: str = "cpu"
@@ -50,14 +50,14 @@ class CMTAdapter(ModelAdapter):
         num_bars: int = int(model_cfg["num_bars"])
 
         # 2. Pipeline-уровневая валидация (то что зависит от нашего конфига).
-        valid_strategies = {"tonic_held", "tonic_quarters", "custom_pkl"}
+        valid_strategies = {"tonic_held", "tonic_quarters", "custom_seed"}
         if cfg.seed_strategy not in valid_strategies:
             raise ValueError(
                 f"unknown seed_strategy={cfg.seed_strategy!r}; "
                 f"expected one of {sorted(valid_strategies)}"
             )
-        if cfg.seed_strategy == "custom_pkl" and cfg.custom_pkl_path is None:
-            raise ValueError("seed_strategy=custom_pkl requires custom_pkl_path")
+        if cfg.seed_strategy == "custom_seed" and cfg.custom_seed_path is None:
+            raise ValueError("seed_strategy=custom_seed requires custom_seed_path")
         if cfg.prime_bars < 1 or cfg.prime_bars > num_bars:
             raise ValueError(
                 f"prime_bars must be in [1, num_bars={num_bars}], got {cfg.prime_bars}"

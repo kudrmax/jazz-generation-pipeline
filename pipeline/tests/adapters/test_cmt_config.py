@@ -25,7 +25,7 @@ def test_cmt_adapter_stores_config(tmp_path: Path):
 def test_cmt_pipeline_config_defaults(tmp_path: Path):
     cfg = _make_config(tmp_path)
     assert cfg.seed_strategy == "tonic_held"
-    assert cfg.custom_pkl_path is None
+    assert cfg.custom_seed_path is None
     assert cfg.prime_bars == 1
     assert cfg.topk == 5
     assert cfg.device == "cpu"
