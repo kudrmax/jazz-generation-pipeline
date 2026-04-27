@@ -29,6 +29,9 @@ class MingusPipelineConfig:
 
 
 class MingusAdapter(ModelAdapter):
+    def __init__(self, config: MingusPipelineConfig | None = None) -> None:
+        self._config = config or MingusPipelineConfig()
+
     def prepare(
         self,
         progression: ChordProgression,
@@ -38,6 +41,7 @@ class MingusAdapter(ModelAdapter):
         from pipeline.config import MINGUS_REPO_PATH  # ленивый импорт чтобы избежать circular
         from pipeline._xml_builders.mingus_xml import build_mingus_xml  # circular: mingus_xml импортирует MingusPipelineConfig
 
+        self._config = config  # remember for extract_melody
         tmp_dir = Path(tmp_dir)
         tmp_dir.mkdir(parents=True, exist_ok=True)
         xml_path = tmp_dir / "input.xml"
@@ -53,5 +57,12 @@ class MingusAdapter(ModelAdapter):
         }
 
     def extract_melody(self, raw_midi_path: Path) -> pretty_midi.Instrument:
-        # реализуется в Task 8
-        raise NotImplementedError("MingusAdapter.extract_melody not yet implemented")
+        target = self._config.melody_instrument_name
+        pm = pretty_midi.PrettyMIDI(str(raw_midi_path))
+        for inst in pm.instruments:
+            if inst.name == target:
+                return inst
+        names = [i.name for i in pm.instruments]
+        raise ValueError(
+            f"melody track {target!r} not found in {raw_midi_path} (have: {names})"
+        )
