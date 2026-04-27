@@ -2,37 +2,64 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
+from typing import Literal
 
-from music21 import chord as m21_chord, harmony, instrument, key, meter, note, stream, tempo
+from music21 import (
+    chord as m21_chord, harmony, instrument, key, meter, note, stream, tempo,
+)
 
-from pipeline.adapters.mingus import MingusPipelineConfig
-from pipeline.chord_vocab import parse_chord, ROOTS
+from pipeline.chord_vocab import parse_chord
 from pipeline.progression import ChordProgression
 
 
-_TONIC_OCTAVE = 5  # С5 = MIDI 72; для саксофона средне-высокий регистр
+_TONIC_OCTAVE = 5  # C5 = MIDI 72; средне-высокий регистр сакса
 
 
-def build_mingus_xml(
+SeedStrategy = Literal["tonic_whole", "tonic_quarters", "custom_xml"]
+
+
+def _instrument_for(name: str):
+    """Возвращает music21-инструмент по имени.
+
+    Поддерживаются основные имена использующиеся в pipeline. Для остальных —
+    fallback на TenorSaxophone (это и так используется обоими моделями).
+    """
+    name_norm = name.lower().replace(" ", "")
+    mapping = {
+        "tenorsax":         instrument.TenorSaxophone,
+        "tenorsaxophone":   instrument.TenorSaxophone,
+        "altosax":          instrument.AltoSaxophone,
+        "sopranosax":       instrument.SopranoSaxophone,
+    }
+    cls = mapping.get(name_norm, instrument.TenorSaxophone)
+    return cls()
+
+
+def build_xml(
     progression: ChordProgression,
-    config: MingusPipelineConfig,
+    seed_strategy: SeedStrategy,
+    custom_xml_path: Path | None,
     out_path: Path,
+    melody_instrument_name: str = "Tenor Sax",
 ) -> None:
-    """Пишет MusicXML, готовый к скармливанию MINGUS gen.xmlToStructuredSong.
+    """Пишет MusicXML, готовый для music21-парсера (используется MINGUS и BebopNet).
 
     seed_strategy:
       - tonic_whole    — 1 whole-нота тоники в каждом баре
       - tonic_quarters — 4 quarter-ноты тоники в каждом баре
-      - custom_xml     — копирует config.custom_xml_path в out_path
+      - custom_xml     — копирует custom_xml_path в out_path
     """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    if config.seed_strategy == "custom_xml":
-        if config.custom_xml_path is None:
+    if seed_strategy == "custom_xml":
+        if custom_xml_path is None:
             raise ValueError("seed_strategy=custom_xml requires custom_xml_path")
-        shutil.copy(config.custom_xml_path, out_path)
+        shutil.copy(custom_xml_path, out_path)
         return
+
+    if not progression.chords:
+        raise ValueError("progression has no chords")
 
     bpb = progression.beats_per_bar()
     if progression.total_beats() % bpb != 0:
@@ -53,11 +80,9 @@ def build_mingus_xml(
     part = stream.Part()
     part.id = "P1"
     part.partName = "Melody"
-    part.insert(0, instrument.TenorSaxophone())
+    part.insert(0, _instrument_for(melody_instrument_name))
 
     measure_idx = 1
-    if not progression.chords:
-        raise ValueError("progression has no chords")
     chord_iter = iter(progression.chords)
     cur_chord, cur_remaining = next(chord_iter)
     for bar in range(progression.num_bars()):
@@ -66,32 +91,28 @@ def build_mingus_xml(
             m.append(meter.TimeSignature(progression.time_signature))
             m.append(tempo.MetronomeMark(number=progression.tempo))
             m.append(key.KeySignature(0))  # C-мажор
-        # положим chord-symbol в начало бара
         cs = harmony.ChordSymbol(cur_chord)
         m.insert(0, cs)
-        # положим затравочные ноты
         root_idx, _quality = parse_chord(cur_chord)
         tonic_pitch = note.Pitch()
         tonic_pitch.midi = root_idx + 12 * (_TONIC_OCTAVE + 1)
-        if config.seed_strategy == "tonic_whole":
+        if seed_strategy == "tonic_whole":
             n = note.Note(tonic_pitch)
             n.quarterLength = bpb
             m.append(n)
-        elif config.seed_strategy == "tonic_quarters":
+        elif seed_strategy == "tonic_quarters":
             for _ in range(bpb):
                 n = note.Note(tonic_pitch)
                 n.quarterLength = 1
                 m.append(n)
         else:
-            raise ValueError(f"unsupported seed_strategy: {config.seed_strategy}")
+            raise ValueError(f"unsupported seed_strategy: {seed_strategy}")
         part.append(m)
-        # забираем beats из текущего аккорда
         cur_remaining -= bpb
         if cur_remaining <= 0 and bar < progression.num_bars() - 1:
             cur_chord, cur_remaining = next(chord_iter)
         measure_idx += 1
 
-    # Sanity check: chord iterator должен быть полностью исчерпан
     remaining = list(chord_iter)
     assert not remaining, (
         f"chord iterator has {len(remaining)} unused chords after "
