@@ -33,19 +33,6 @@ _QUALITY_INTERVALS: dict[str, list[int]] = {
     "dim7": [0, 3, 6, 9],
 }
 
-QUALITY_FALLBACK_TO_TRIADS: dict[str, str] = {
-    "7": "maj", "maj7": "maj", "min7": "min", "dim7": "dim",
-}
-
-EXTENDED_FALLBACK_TO_VOCAB: dict[str, str] = {
-    "m7b5": "dim",
-    "alt": "7",
-    "6": "maj",
-    "9": "7",
-    "13": "7",
-}
-
-
 def parse_chord(chord_str: str) -> tuple[int, str]:
     """`"Cmaj7"` → `(0, "maj7")`. Pitch class of root (0..11), normalized quality."""
     s = chord_str.strip()

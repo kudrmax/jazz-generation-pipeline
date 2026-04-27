@@ -3,7 +3,6 @@ import pytest
 from pipeline.chord_vocab import (
     ROOTS, QUALITIES,
     parse_chord, chord_to_pitches,
-    QUALITY_FALLBACK_TO_TRIADS, EXTENDED_FALLBACK_TO_VOCAB,
 )
 
 
@@ -61,15 +60,3 @@ def test_chord_to_pitches_am7():
 def test_chord_to_pitches_dim7():
     # C dim 7: C Eb Gb Bbb (=A) — все интервалы по минор-3
     assert chord_to_pitches("Cdim7") == [60, 63, 66, 69]
-
-
-def test_quality_fallback_to_triads():
-    assert QUALITY_FALLBACK_TO_TRIADS["7"] == "maj"
-    assert QUALITY_FALLBACK_TO_TRIADS["min7"] == "min"
-    assert QUALITY_FALLBACK_TO_TRIADS["dim7"] == "dim"
-
-
-def test_extended_fallback():
-    assert EXTENDED_FALLBACK_TO_VOCAB["m7b5"] == "dim"
-    assert EXTENDED_FALLBACK_TO_VOCAB["13"] == "7"
-    assert EXTENDED_FALLBACK_TO_VOCAB["6"] == "maj"
