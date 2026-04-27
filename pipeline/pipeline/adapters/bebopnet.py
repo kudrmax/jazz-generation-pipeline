@@ -37,7 +37,21 @@ class BebopNetAdapter(ModelAdapter):
         self._config = config
 
     def prepare(self, progression: ChordProgression, tmp_dir: Path) -> dict:
-        raise NotImplementedError("model bebopnet: prepare not implemented yet")
+        self._validate(progression)
+        raise NotImplementedError("model bebopnet: prepare not fully implemented yet")
+
+    def _validate(self, progression: ChordProgression) -> None:
+        cfg = self._config
+        valid_strategies = {"tonic_whole", "tonic_quarters", "custom_xml"}
+        if cfg.seed_strategy not in valid_strategies:
+            raise ValueError(
+                f"unknown seed_strategy={cfg.seed_strategy!r}; "
+                f"expected one of {sorted(valid_strategies)}"
+            )
+        if cfg.seed_strategy == "custom_xml" and cfg.custom_xml_path is None:
+            raise ValueError("seed_strategy=custom_xml requires custom_xml_path")
+        if not progression.chords:
+            raise ValueError("progression has no chords")
 
     def extract_melody(self, raw_midi_path: Path) -> pretty_midi.Instrument:
         raise NotImplementedError("model bebopnet: extract_melody not implemented yet")
