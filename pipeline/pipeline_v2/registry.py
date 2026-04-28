@@ -40,3 +40,29 @@ class ModelRegistry(ABC):
 
     @abstractmethod
     def get(self, model_name: ModelName) -> ModelBundle: ...
+
+
+class UnknownModelError(KeyError):
+    """Поднимается реестром, если для запрошенного ModelName нет bundle."""
+
+
+class DictModelRegistry(ModelRegistry):
+    """Простейший реестр — словарь ModelName → ModelBundle.
+
+    Всё знание о связи имени и реализаций задаётся снаружи при сборке
+    (в фабрике или композиционном корне приложения). Сам реестр —
+    тонкая обёртка над dict, без логики.
+    """
+
+    def __init__(self, bundles: dict[ModelName, ModelBundle]) -> None:
+        self._bundles = dict(bundles)
+
+    def get(self, model_name: ModelName) -> ModelBundle:
+        try:
+            return self._bundles[model_name]
+        except KeyError as e:
+            known = sorted(m.value for m in self._bundles)
+            raise UnknownModelError(
+                f"no bundle registered for {model_name.value!r}; "
+                f"known: {known}"
+            ) from e

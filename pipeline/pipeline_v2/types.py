@@ -27,15 +27,34 @@ class ModelName(str, Enum):
 
 @dataclass(frozen=True)
 class Progression:
-    """Замысел: аккорды + темп + размер. Поля наполним позже."""
+    """Замысел: аккорды + темп + размер."""
+
+    chords: tuple[tuple[str, int], ...]  # (chord_name, duration_in_beats)
+    tempo: float                          # BPM, > 0
+    time_signature: str                   # "4/4", "3/4", ...
+
+
+@dataclass(frozen=True)
+class Note:
+    """Одна нота монофонной мелодии. Время в секундах от начала мелодии."""
+
+    pitch: int       # MIDI pitch, обычно [0, 127]
+    start: float     # секунды
+    end: float       # секунды; end > start
+    velocity: int    # MIDI velocity, [0, 127]
 
 
 @dataclass(frozen=True)
 class Melody:
-    """Монофонная мелодия. Один тип на две роли:
-    опциональная затравка на входе и итоговая мелодия на выходе.
-    Поля наполним позже.
+    """Монофонная мелодия — упорядоченный список нот.
+
+    Один тип на две роли: опциональная затравка на входе и итоговая
+    мелодия на выходе. "Монофонность" — инвариант, который должны
+    соблюдать создатели Melody (адаптеры, парсеры темы), здесь не
+    проверяется.
     """
+
+    notes: tuple[Note, ...]
 
 
 @dataclass(frozen=True)
