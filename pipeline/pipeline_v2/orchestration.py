@@ -14,29 +14,33 @@ from pipeline_v2.input_source import InputSource
 from pipeline_v2.packing import ResultPacker
 from pipeline_v2.registry import ModelRegistry
 from pipeline_v2.types import FinalArtifacts, ModelName, Progression, RunContext
-from pipeline_v2.validation import ValidationFailedError
+from pipeline_v2.validation import CommonInputValidator, ValidationFailedError
 
 
 class Orchestrator(ABC):
     """Точка входа pipeline. Гонит шаги 1→5.
 
-    В run() создаёт RunContext (run_id, tmp_dir, model_label) и
-    исполняет поток так, что PipelineInput жив до самого шага 5
-    (его поля нужны и для генерации, и для финальной сборки):
+    В __init__ принимает: InputSource, CommonInputValidator, ModelName,
+    ModelRegistry, ResultPacker. В run() создаёт RunContext
+    (run_id, tmp_dir, model_label) и исполняет поток:
 
-        inp     = source.load()                          # шаг 1
-        bundle  = registry.get(model_name)               # выбор реализаций
-        result  = bundle.validator.validate(inp)         # шаг 2
-        if not result.ok:
-            raise ValidationFailedError(result.errors)
-        raw     = bundle.generator.generate(inp, ctx)    # шаг 3
-        melody  = bundle.extractor.extract(raw)          # шаг 4
-        return packer.pack(
-            melody, inp.progression, ctx,                # шаг 5
-        )
+        inp     = source.load()                            # шаг 1
+        common  = common_validator.validate(inp)           # шаг 2.A
+        if not common.ok:
+            raise ValidationFailedError(common.errors)
+        bundle  = registry.get(model_name)
+        per_m   = bundle.validator.validate(inp)           # шаг 2.Б
+        if not per_m.ok:
+            raise ValidationFailedError(per_m.errors)
+        raw     = bundle.generator.generate(inp, ctx)      # шаг 3
+        melody  = bundle.extractor.extract(raw)            # шаг 4
+        return packer.pack(melody, inp.progression, ctx)   # шаг 5
 
-    PipelineInput намеренно не пересоздаётся между шагами и не
-    мутируется: один объект на весь запуск, читается слоями 2, 3, 5.
+    Шаги 2.A и 2.Б НЕ объединяются: если общий валидатор отказал,
+    per-model даже не зовётся. tmp_dir создаётся только после успешной
+    валидации, чтобы не оставлять мусор при отказе.
+
+    PipelineInput не мутируется: один объект на весь запуск.
     """
 
     @abstractmethod
@@ -66,19 +70,21 @@ def _make_run_id(progression: Progression) -> str:
 class DefaultOrchestrator(Orchestrator):
     """Стандартная реализация оркестратора.
 
-    Создаёт уникальный tmp_dir внутри tmp_root для каждого запуска
-    и пробрасывает его слоям 3-5 через RunContext.
+    Двухэтапная валидация (общая + per-model) выполняется ДО создания
+    tmp_dir, чтобы при отказе валидатора не оставалось мусора на диске.
     """
 
     def __init__(
         self,
         input_source: InputSource,
+        common_validator: CommonInputValidator,
         model_name: ModelName,
         registry: ModelRegistry,
         packer: ResultPacker,
         tmp_root: Path | str,
     ) -> None:
         self._input_source = input_source
+        self._common_validator = common_validator
         self._model_name = model_name
         self._registry = registry
         self._packer = packer
@@ -86,6 +92,17 @@ class DefaultOrchestrator(Orchestrator):
 
     def run(self) -> FinalArtifacts:
         inp = self._input_source.load()                       # шаг 1
+
+        common_result = self._common_validator.validate(inp)  # шаг 2.A
+        if not common_result.ok:
+            raise ValidationFailedError(common_result.errors)
+
+        bundle = self._registry.get(self._model_name)
+
+        per_model_result = bundle.validator.validate(inp)     # шаг 2.Б
+        if not per_model_result.ok:
+            raise ValidationFailedError(per_model_result.errors)
+
         run_id = _make_run_id(inp.progression)
         tmp_dir = self._tmp_root / run_id
         tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -94,12 +111,6 @@ class DefaultOrchestrator(Orchestrator):
             tmp_dir=tmp_dir,
             model_label=self._model_name.value,
         )
-
-        bundle = self._registry.get(self._model_name)
-
-        result = bundle.validator.validate(inp)               # шаг 2
-        if not result.ok:
-            raise ValidationFailedError(result.errors)
 
         raw = bundle.generator.generate(inp, ctx)             # шаг 3
         melody = bundle.extractor.extract(raw)                # шаг 4

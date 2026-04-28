@@ -12,6 +12,7 @@
 
 Сбоку (не шаги, а инжектируемые сущности):
 - `ModelSpec` — что модель поддерживает (словарь аккордов, ограничения по длине, размер такта и т.п.).
+- `CommonInputValidator` — pipeline-уровневая валидация (что наш pipeline в принципе принимает). Не зависит от модели. Зовётся оркестратором **до** per-model валидатора.
 - `ModelRegistry` — DI: `ModelName → (validator, generator, extractor)`.
 - `Orchestrator` — гонит шаги 1→5 в последовательности.
 - `RunContext` — состояние одного запуска (`run_id`, `tmp_dir`).
@@ -127,6 +128,39 @@ class InputValidator(ABC):
     Контракт: возвращает ValidationResult со всеми найденными
     проблемами разом, не первую попавшуюся. Не правит вход,
     не строит файлов, не обращается к чекпоинту.
+    """
+
+    @abstractmethod
+    def validate(self, pipeline_input: PipelineInput) -> ValidationResult: ...
+```
+
+### CommonInputValidator (pipeline-уровневая валидация)
+
+Помимо per-model валидатора есть **общая** валидация — то что наш pipeline в принципе принимает, независимо от модели. Зовётся оркестратором **перед** per-model валидатором; если возвращает непустой `errors` — pipeline обрывается, per-model валидатор даже не зовётся.
+
+Что валидируется на pipeline-уровне:
+- Все аккорды парсятся нашим словарём (root + одно из 7 поддерживаемых качеств).
+- Прогрессия не пуста, длительности > 0.
+- Сумма долей делится на `beats_per_bar` (укладывается в целое число баров).
+- Темп в разумном диапазоне.
+- Размер такта в формате `"N/M"`.
+
+Что **не** валидируется на pipeline-уровне (это per-model):
+- Конкретный размер такта (например, MINGUS требует 4/4).
+- Кратность длительности аккорда бару (MINGUS).
+- Длина прогрессии под чекпоинт (CMT).
+
+Контракт-результат тот же что у `InputValidator` (`ValidationResult`), но это **отдельный класс** с собственным ABC. Per-model валидаторы на него не наследуются — это совсем другая ответственность.
+
+```python
+from abc import ABC, abstractmethod
+
+
+class CommonInputValidator(ABC):
+    """Pipeline-уровневая валидация, не зависит от модели.
+
+    Реализация на сегодня одна (общая для всех моделей).
+    Зовётся оркестратором ПЕРЕД per-model валидатором.
     """
 
     @abstractmethod
@@ -311,7 +345,7 @@ class ResultPacker(ABC):
 
 `InputSource` и `ResultPacker` — общие, в реестре их нет.
 
-**`Orchestrator`** — точка входа. В `__init__` принимает: `InputSource`, `ModelName`, `ModelRegistry`, `ResultPacker`. В `run()` создаёт `RunContext` (новый `run_id`, новый `tmp_dir`) и гонит пять шагов. Если валидация не прошла — поднимает `ValidationFailedError` со всеми претензиями.
+**`Orchestrator`** — точка входа. В `__init__` принимает: `InputSource`, `CommonInputValidator`, `ModelName`, `ModelRegistry`, `ResultPacker`. В `run()` создаёт `RunContext` (новый `run_id`, новый `tmp_dir`) и гонит пять шагов. На шаге 2 валидация двухэтапная: сначала `CommonInputValidator`, затем per-model `InputValidator` из bundle. Если хоть один вернул непустой `errors` — поднимает `ValidationFailedError` со всеми претензиями этого этапа (per-model не зовётся, если общий уже отказал).
 
 ```python
 from abc import ABC, abstractmethod
@@ -358,21 +392,29 @@ class ValidationFailedError(Exception):
 class Orchestrator(ABC):
     """Точка входа pipeline. Гонит шаги 1→5 в последовательности.
 
-    В __init__: InputSource, ModelName, ModelRegistry, ResultPacker.
-    В run() создаёт RunContext (run_id, tmp_dir, model_label) и
-    исполняет поток так, что PipelineInput жив до самого шага 5
-    (его поля нужны и для генерации, и для финальной сборки):
+    В __init__: InputSource, CommonInputValidator, ModelName,
+    ModelRegistry, ResultPacker. В run() создаёт RunContext
+    (run_id, tmp_dir, model_label) и исполняет поток так, что
+    PipelineInput жив до самого шага 5 (его поля нужны и для
+    генерации, и для финальной сборки):
 
         inp     = source.load()                          # шаг 1
+        common  = common_validator.validate(inp)         # шаг 2.A (pipeline)
+        if not common.ok:
+            raise ValidationFailedError(common.errors)
         bundle  = registry.get(model_name)               # выбор реализаций
-        result  = bundle.validator.validate(inp)         # шаг 2
-        if not result.ok:
-            raise ValidationFailedError(result.errors)
+        per_m   = bundle.validator.validate(inp)         # шаг 2.Б (модель)
+        if not per_m.ok:
+            raise ValidationFailedError(per_m.errors)
         raw     = bundle.generator.generate(inp, ctx)    # шаг 3
         melody  = bundle.extractor.extract(raw)          # шаг 4
         return packer.pack(
             melody, inp.progression, ctx,                # шаг 5
         )
+
+    Ошибки этапов 2.A и 2.Б НЕ объединяются: если общий валидатор
+    отказал, per-model даже не зовётся (модельные ограничения
+    обсуждать смысла нет, если pipeline вообще не примет вход).
 
     PipelineInput намеренно не пересоздаётся между шагами и не
     мутируется: один объект на весь запуск, читается слоями 2, 3, 5.
