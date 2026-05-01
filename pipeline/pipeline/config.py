@@ -18,9 +18,9 @@ RUNNERS_ROOT: Path = PIPELINE_ROOT / "runners"
 
 MINGUS_REPO_PATH: Path = DIPLOMA_ROOT / "models" / "MINGUS"
 CMT_REPO_PATH:        Path = DIPLOMA_ROOT / "models" / "CMT-pytorch"
-CMT_RESULT_DIR:       Path = CMT_REPO_PATH / "result" / "smoke_wjazzd_5epochs"
-CMT_CHECKPOINT_PATH:  Path = CMT_RESULT_DIR / "smoke_5epochs.pth.tar"  # ← подмена весов: эта строка
-CMT_HPARAMS_PATH:     Path = CMT_RESULT_DIR / "hparams.yaml"           # ← гипер-параметры в паре с весами
+CMT_RESULT_DIR:       Path = CMT_REPO_PATH / "result" / "baseline"
+CMT_CHECKPOINT_PATH:  Path = CMT_RESULT_DIR / "final_jazz_model.pth.tar"
+CMT_HPARAMS_PATH:     Path = CMT_REPO_PATH / "hparams_jazz.yaml"
 
 BEBOPNET_REPO_PATH:           Path = DIPLOMA_ROOT / "models" / "bebopnet-code"
 BEBOPNET_MODEL_DIR:           Path = BEBOPNET_REPO_PATH / "training_results" / "transformer" / "model"
